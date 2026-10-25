@@ -1,0 +1,46 @@
+# Dependencies
+/node_modules/
+
+# Next.js build output
+/.next/
+/out/
+/build/
+/dist/
+
+# Deployments
+/.vercel/
+
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Test and coverage output
+/coverage/
+/playwright-report/
+/test-results/
+
+# Tool caches
+.turbo/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local editor settings
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
