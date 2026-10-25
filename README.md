@@ -2,6 +2,11 @@
 
 Aplicação responsiva para gestão de estoque de autopeças e produtos para lava a jato. Permite consultar o dashboard, cadastrar e pesquisar produtos, acompanhar entradas e saídas, registrar produtos com defeito e visualizar fornecedores e relatórios. Inclui temas claro e escuro e controle de acesso demonstrativo para administrador e funcionário.
 
+
+## Acesso ao link para ver funcionando
+
+https://vercel.com/am-tech5/gerenciamento-de-estoque
+
 ## Tecnologias
 
 Next.js, React, TypeScript, Tailwind CSS e Recharts.
