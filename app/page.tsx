@@ -20,7 +20,6 @@ import {
   ClipboardList,
   Download,
   Droplets,
-  Home as HomeIcon,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -52,7 +51,7 @@ import {
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type Role = "admin" | "employee";
-type Page = "home" | "dashboard" | "products" | "defective-products" | "movements" | "reports" | "suppliers" | "settings";
+type Page = "dashboard" | "products" | "defective-products" | "movements" | "reports" | "suppliers" | "settings";
 type Product = {
   id: number;
   name: string;
@@ -62,7 +61,6 @@ type Product = {
   minimum: number;
   price: number;
   unit: string;
-  createdAt: number;
 };
 type Movement = {
   id: number;
@@ -82,12 +80,12 @@ type DefectiveProduct = {
 };
 
 const initialProducts: Product[] = [
-  { id: 1, name: "Óleo sintético 5W30", sku: "LUB-005", category: "Lubrificantes", stock: 84, minimum: 20, price: 42.9, unit: "un", createdAt: Date.now() - 2 * 86400000 },
-  { id: 2, name: "Filtro de óleo Tecfil", sku: "FIL-021", category: "Peças automotivas", stock: 12, minimum: 15, price: 28.5, unit: "un", createdAt: Date.now() - 86400000 },
-  { id: 3, name: "Shampoo automotivo 5L", sku: "LAV-008", category: "Lava a jato", stock: 36, minimum: 10, price: 65, unit: "galão", createdAt: Date.now() - 3 * 86400000 },
-  { id: 4, name: "Pastilha de freio dianteira", sku: "FRE-014", category: "Peças automotivas", stock: 7, minimum: 10, price: 119.9, unit: "par", createdAt: Date.now() - 5 * 86400000 },
-  { id: 5, name: "Cera líquida premium", sku: "LAV-012", category: "Lava a jato", stock: 28, minimum: 8, price: 34.9, unit: "un", createdAt: Date.now() - 7 * 86400000 },
-  { id: 6, name: "Fluido de freio DOT 4", sku: "FLU-002", category: "Lubrificantes", stock: 3, minimum: 12, price: 31.9, unit: "un", createdAt: Date.now() - 10 * 86400000 },
+  { id: 1, name: "Óleo sintético 5W30", sku: "LUB-005", category: "Lubrificantes", stock: 84, minimum: 20, price: 42.9, unit: "un" },
+  { id: 2, name: "Filtro de óleo Tecfil", sku: "FIL-021", category: "Peças automotivas", stock: 12, minimum: 15, price: 28.5, unit: "un" },
+  { id: 3, name: "Shampoo automotivo 5L", sku: "LAV-008", category: "Lava a jato", stock: 36, minimum: 10, price: 65, unit: "galão" },
+  { id: 4, name: "Pastilha de freio dianteira", sku: "FRE-014", category: "Peças automotivas", stock: 7, minimum: 10, price: 119.9, unit: "par" },
+  { id: 5, name: "Cera líquida premium", sku: "LAV-012", category: "Lava a jato", stock: 28, minimum: 8, price: 34.9, unit: "un" },
+  { id: 6, name: "Fluido de freio DOT 4", sku: "FLU-002", category: "Lubrificantes", stock: 3, minimum: 12, price: 31.9, unit: "un" },
 ];
 
 const initialMovements: Movement[] = [
@@ -124,8 +122,10 @@ const money = (value: number) =>
 
 export default function Home() {
   const [role, setRole] = useState<Role | null>(null);
-  const [page, setPage] = useState<Page>("home");
+  const [page, setPage] = useState<Page>("dashboard");
   const [dark, setDark] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [search, setSearch] = useState("");
   const [productCategory, setProductCategory] = useState("Todas as categorias");
   const [productCode, setProductCode] = useState("");
@@ -186,14 +186,14 @@ export default function Home() {
     }
     localStorage.setItem("stockly-role", matchedRole);
     setRole(matchedRole);
-    setPage("home");
+    setPage("dashboard");
     setLoginError("");
   }
 
   function signOut() {
     localStorage.removeItem("stockly-role");
     setRole(null);
-    setPage("home");
+    setPage("dashboard");
   }
 
   function flash(message: string) {
@@ -202,11 +202,20 @@ export default function Home() {
   }
 
   function navigateTo(target: Page) {
-    if (role === "employee" && target !== "home" && !employeePages.includes(target)) {
+    if (role === "employee" && !employeePages.includes(target)) {
       flash("Essa opção está disponível apenas para administradores.");
       return;
     }
     setPage(target);
+    setMobileMenu(false);
+  }
+
+  function toggleSidebar() {
+    if (window.matchMedia("(max-width: 640px)").matches) {
+      setMobileMenu(false);
+      return;
+    }
+    setSidebarCollapsed((collapsed) => !collapsed);
   }
 
   function addProduct(event: FormEvent<HTMLFormElement>) {
@@ -221,7 +230,6 @@ export default function Home() {
       minimum: Number(data.get("minimum")),
       price: Number(data.get("price")),
       unit: String(data.get("unit")),
-      createdAt: Date.now(),
     };
     setProducts((current) => [product, ...current]);
     setModal(null);
@@ -333,13 +341,29 @@ export default function Home() {
     );
   }
 
-  const pageTitle = page === "home" ? "Início" : availableNavItems.find((item) => item.id === page)?.label ?? "Início";
+  const pageTitle = availableNavItems.find((item) => item.id === page)?.label ?? "Dashboard";
 
   return (
-    <main className={`app-shell ${dark ? "theme-dark" : ""}`}>
+    <main className={`app-shell ${dark ? "theme-dark" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
+      {mobileMenu && <button aria-label="Fechar menu" className="mobile-backdrop" onClick={() => setMobileMenu(false)} />}
+      <aside className={`sidebar ${mobileMenu ? "sidebar-open" : ""}`}>
+        <div className="sidebar-header"><div className="brand-lockup sidebar-brand"><span className="brand-icon"><Box size={21} /></span><span>Estoque 3 <span className="brand-dot">Irmãos</span></span></div><button className="sidebar-toggle" onClick={toggleSidebar} aria-label={mobileMenu ? "Fechar menu lateral" : sidebarCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"} title={mobileMenu ? "Fechar menu" : sidebarCollapsed ? "Expandir menu" : "Recolher menu"}>{sidebarCollapsed && !mobileMenu ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}</button></div>
+        <div className="workspace-switch"><span className="workspace-logo"><Wrench size={17} /></span><span><strong>Estoque 3 Irmãos</strong><small>Gestão de estoque</small></span><ChevronDown size={15} /></div>
+        <div className="nav-caption">MENU PRINCIPAL</div>
+        <nav className="main-nav" aria-label="Navegação principal">
+          {availableNavItems.map(({ id, label, icon: Icon }) => (
+            <button key={id} className={`nav-link ${page === id ? "active" : ""}`} aria-current={page === id ? "page" : undefined} onClick={() => navigateTo(id)}>
+              <Icon size={18} /><span>{label}</span>{id === "products" && lowStock.length > 0 && <span className="nav-badge">{lowStock.length}</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-spacer" />
+        <div className="help-card"><div className="help-card-icon"><CircleHelp size={18} /></div><strong>Precisa de ajuda?</strong><p>Nosso time está pronto para ajudar você.</p><button onClick={() => flash("Nosso time entrará em contato em breve.")}>Falar com suporte <ArrowRight size={14} /></button></div>
+        <div className="profile-row"><div className="avatar">{role === "admin" ? "MS" : "AC"}</div><div className="profile-info"><strong>{role === "admin" ? "Marcos Silva" : "Ana Costa"}</strong><small>{role === "admin" ? "Administrador" : "Funcionário"}</small></div><button className="profile-logout" title="Sair" aria-label="Sair da conta" onClick={signOut}><LogOut size={17} /></button></div>
+      </aside>
       <section className="main-area">
         <header className="topbar">
-          <div className="topbar-brand"><button className="topbar-logo brand-lockup" onClick={() => navigateTo("home")} aria-label="Ir para o início"><span className="brand-icon"><Box size={20} /></span><span>Estoque 3 <span className="brand-dot">Irmãos</span></span></button><span className="topbar-divider" /><strong>{pageTitle}</strong></div>
+          <div className="breadcrumb"><button className="mobile-menu-button" onClick={() => setMobileMenu(true)} aria-label="Abrir menu"><Menu size={20} /></button><span>Estoque 3 Irmãos</span><ChevronRight size={14} /><strong>{pageTitle}</strong></div>
           <div className="topbar-actions">
             <div className="date-pill"><span className="online-dot" />Estoque atualizado</div>
             <button className="icon-button notification-button" aria-label="Notificações" onClick={() => navigateTo("products")}><Bell size={18} />{lowStock.length > 0 && <i />}</button>
@@ -349,17 +373,7 @@ export default function Home() {
           </div>
         </header>
 
-        {page !== "home" && <nav className="top-nav" aria-label="Navegação principal">
-          <button className="top-nav-link" onClick={() => navigateTo("home")}><HomeIcon size={16} /><span>Home</span></button>
-          {availableNavItems.map(({ id, label, icon: Icon }) => (
-            <button key={id} className={`top-nav-link ${page === id ? "active" : ""}`} aria-current={page === id ? "page" : undefined} onClick={() => navigateTo(id)}>
-              <Icon size={16} /><span>{label}</span>{id === "products" && lowStock.length > 0 && <i className="top-nav-badge">{lowStock.length}</i>}
-            </button>
-          ))}
-        </nav>}
-
         <div className="content">
-          {page === "home" && <HomeMenu role={role} products={products} lowStock={lowStock} onNavigate={navigateTo} />}
           {page === "dashboard" && <Dashboard products={products} movements={movements} lowStock={lowStock} onNavigate={navigateTo} onModal={setModal} />}
           {page === "products" && <ProductsPage products={filteredProducts} allProducts={products} search={search} setSearch={setSearch} category={productCategory} setCategory={setProductCategory} onModal={openProductModal} isAdmin={role === "admin"} onDelete={(id) => { setProducts((current) => current.filter((item) => item.id !== id)); flash("Produto removido."); }} />}
           {page === "defective-products" && <DefectiveProductsPage defectiveProducts={defectiveProducts} onSubmit={addDefectiveProduct} />}
@@ -389,61 +403,6 @@ export default function Home() {
       {notice && <div className="toast"><Check size={16} />{notice}</div>}
     </main>
   );
-}
-
-function HomeMenu({ role, products, lowStock, onNavigate }: { role: Role; products: Product[]; lowStock: Product[]; onNavigate: (page: Page) => void }) {
-  const cards = navItems.filter(({ id }) => role === "admin" || employeePages.includes(id)).map((item) => ({
-    ...item,
-    description: {
-      home: "Acesse todos os módulos",
-      dashboard: "Resumo e indicadores da operação",
-      products: "Catálogo e níveis de estoque",
-      "defective-products": "Registro e histórico de produtos danificados",
-      movements: "Entradas, saídas e ajustes",
-      reports: "Análises e relatórios do estoque",
-      suppliers: "Parceiros e contatos comerciais",
-      settings: "Conta, tema e preferências",
-    }[item.id],
-    count: item.id === "products" ? `${products.length} produtos` : item.id === "movements" ? "Registrar e acompanhar" : undefined,
-    badge: item.id === "products" && lowStock.length > 0 ? `${lowStock.length} para repor` : undefined,
-  }));
-
-  function followPointer(event: React.PointerEvent<HTMLButtonElement>) {
-    if (event.pointerType !== "mouse") return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - bounds.left;
-    const y = event.clientY - bounds.top;
-    const rotateY = ((x / bounds.width) - 0.5) * 8;
-    const rotateX = (0.5 - y / bounds.height) * 8;
-    event.currentTarget.style.setProperty("--pointer-x", `${x}px`);
-    event.currentTarget.style.setProperty("--pointer-y", `${y}px`);
-    event.currentTarget.style.setProperty("--rotate-x", `${rotateX}deg`);
-    event.currentTarget.style.setProperty("--rotate-y", `${rotateY}deg`);
-  }
-
-  return <div className="home-menu-page">
-    <div className="home-menu-heading"><span className="eyebrow">ESTOQUE 3 IRMÃOS · CENTRAL DE OPERAÇÕES</span><h1>Olá, {role === "admin" ? "Marcos" : "Ana"} <span className="wave">✦</span></h1><p>O que você gostaria de fazer hoje?</p></div>
-    <div className="home-tiles">
-      {cards.map(({ id, label, icon: Icon, description, count, badge }, index) => <button
-        key={id}
-        className="home-tile"
-        style={{ "--tile-index": index } as React.CSSProperties}
-        onClick={() => onNavigate(id)}
-        onPointerMove={followPointer}
-        onPointerLeave={(event) => {
-          event.currentTarget.style.setProperty("--rotate-x", "0deg");
-          event.currentTarget.style.setProperty("--rotate-y", "0deg");
-        }}
-      >
-        <span className="tile-icon-wrap"><Icon size={25} strokeWidth={1.8} /></span>
-        {badge && <span className="tile-badge">{badge}</span>}
-        <span className="tile-label">{label}</span>
-        <span className="tile-description">{description}</span>
-        <span className="tile-footer">{count ?? "Acessar módulo"}<ArrowRight size={15} /></span>
-      </button>)}
-    </div>
-    <div className="home-menu-footer"><span><i className="online-dot" />{products.length} produtos cadastrados</span><span>{lowStock.length ? `${lowStock.length} produtos precisam de reposição` : "Todos os níveis de estoque estão em dia"}</span></div>
-  </div>;
 }
 
 function Dashboard({ products, movements, lowStock, onNavigate, onModal }: { products: Product[]; movements: Movement[]; lowStock: Product[]; onNavigate: (page: Page) => void; onModal: (modal: "product" | "movement") => void }) {
@@ -493,29 +452,15 @@ function MovementTable({ movements }: { movements: Movement[] }) {
 }
 
 function ProductsPage({ products, allProducts, search, setSearch, category, setCategory, onModal, isAdmin, onDelete }: { products: Product[]; allProducts: Product[]; search: string; setSearch: (value: string) => void; category: string; setCategory: (value: string) => void; onModal: () => void; isAdmin: boolean; onDelete: (id: number) => void }) {
-  const recentProducts = [...products].sort((first, second) => second.createdAt - first.createdAt).slice(0, 4);
-  const groupedProducts = products.reduce<Record<string, Product[]>>((groups, product) => {
-    (groups[product.category] ??= []).push(product);
-    return groups;
-  }, {});
   const categories = Array.from(new Set(allProducts.map((product) => product.category))).sort((first, second) => first.localeCompare(second, "pt-BR"));
 
   return <div className="page-content">
     <PageHeading eyebrow="CATÁLOGO" title="Produtos" description="Gerencie seus produtos, acompanhe os níveis de estoque e mantenha tudo organizado." action={<button className="primary-button" onClick={onModal}><Plus size={16} />Cadastrar novo produto</button>} />
-    <section className="panel recent-products-panel">
-      <div className="panel-heading"><div><h2>Cadastrados recentemente</h2><p>Produtos adicionados ao catálogo</p></div><span className="recent-count">{products.length} encontrados</span></div>
-      {recentProducts.length ? <div className="recent-product-list">{recentProducts.map((product) => <div className="recent-product-card" key={product.id}><span className="recent-product-icon"><Package size={17} /></span><div className="recent-product-info"><strong>{product.name}</strong><small>{product.category} · {product.sku}</small></div><span className="recent-product-date">{new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(product.createdAt)}</span></div>)}</div> : <div className="empty-state recent-empty"><Package size={22} /><strong>Nenhum produto encontrado</strong><span>Altere a busca ou o filtro para ver produtos cadastrados.</span></div>}
-    </section>
     <section className="panel products-panel">
       <div className="products-toolbar"><div className="search-box"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} aria-label="Buscar qualquer produto" placeholder="Buscar qualquer produto por nome, código, categoria..." /></div><label className="category-filter"><span>Categoria</span><select value={category} onChange={(event) => setCategory(event.target.value)}><option>Todas as categorias</option>{categories.map((item) => <option key={item}>{item}</option>)}</select></label><button className="secondary-button filter-button" onClick={() => window.print()}><Download size={15} /> Exportar</button></div>
-      <div className="grouped-products">
-        {Object.entries(groupedProducts).sort(([first], [second]) => first.localeCompare(second, "pt-BR")).map(([group, groupProducts]) => <section className="product-category-group" key={group}>
-          <div className="category-group-heading"><span className="category-group-icon"><Package size={16} /></span><h2>{group}</h2><span className="category-group-count">{groupProducts.length} {groupProducts.length === 1 ? "produto" : "produtos"}</span></div>
-          <ProductTable products={groupProducts} isAdmin={isAdmin} onDelete={onDelete} />
-        </section>)}
-        {products.length === 0 && <div className="empty-state"><Package size={24} /><strong>Nenhum produto encontrado</strong><span>Tente outro termo ou altere o filtro de categoria.</span></div>}
-      </div>
-      <div className="table-footer"><span>Mostrando <strong>{products.length}</strong> produtos em <strong>{Object.keys(groupedProducts).length}</strong> categorias</span></div>
+      <ProductTable products={products} isAdmin={isAdmin} onDelete={onDelete} />
+      {products.length === 0 && <div className="empty-state"><Package size={24} /><strong>Nenhum produto encontrado</strong><span>Tente outro termo ou altere o filtro de categoria.</span></div>}
+      <div className="table-footer"><span>Mostrando <strong>{products.length}</strong> produtos</span><div className="pagination"><button aria-label="Página anterior"><ChevronLeft size={16} /></button><button className="current-page">1</button><button aria-label="Próxima página"><ChevronRight size={16} /></button></div></div>
     </section>
   </div>;
 }
@@ -539,7 +484,7 @@ function DefectiveProductsPage({ defectiveProducts, onSubmit }: { defectiveProdu
 }
 
 function ProductTable({ products, isAdmin, onDelete }: { products: Product[]; isAdmin: boolean; onDelete: (id: number) => void }) {
-  return <div className="table-scroll"><table className="products-table"><thead><tr><th>PRODUTO</th><th>SKU / CÓDIGO</th><th>ESTOQUE</th><th>PREÇO UNIT.</th><th>STATUS</th><th></th></tr></thead><tbody>{products.map((product) => <tr key={product.id}><td><div className="table-product"><span className="table-product-icon"><Package size={16} /></span><span><strong>{product.name}</strong><small>Unidade: {product.unit}</small></span></div></td><td className="sku-cell">{product.sku}</td><td><strong>{product.stock}</strong> <span className="muted-cell">{product.unit}</span></td><td>{money(product.price)}</td><td><span className={`status-tag ${product.stock <= product.minimum ? "status-low" : "status-ok"}`}><i />{product.stock <= product.minimum ? "Estoque baixo" : "Disponível"}</span></td><td>{isAdmin && <button className="more-button" title="Remover produto" onClick={() => onDelete(product.id)}><MoreHorizontal size={18} /></button>}</td></tr>)}</tbody></table></div>;
+  return <div className="table-scroll"><table className="products-table"><thead><tr><th>PRODUTO</th><th>CATEGORIA</th><th>CÓDIGO</th><th>ESTOQUE</th><th>PREÇO UNIT.</th><th>STATUS</th><th></th></tr></thead><tbody>{products.map((product) => <tr key={product.id}><td><div className="table-product"><span className="table-product-icon"><Package size={16} /></span><span><strong>{product.name}</strong><small>Unidade: {product.unit}</small></span></div></td><td>{product.category}</td><td className="sku-cell">{product.sku}</td><td><strong>{product.stock}</strong> <span className="muted-cell">{product.unit}</span></td><td>{money(product.price)}</td><td><span className={`status-tag ${product.stock <= product.minimum ? "status-low" : "status-ok"}`}><i />{product.stock <= product.minimum ? "Estoque baixo" : "Disponível"}</span></td><td>{isAdmin && <button className="more-button" title="Remover produto" onClick={() => onDelete(product.id)}><MoreHorizontal size={18} /></button>}</td></tr>)}</tbody></table></div>;
 }
 
 function BarcodeScanner({ onDetected }: { onDetected: (code: string) => void }) {
