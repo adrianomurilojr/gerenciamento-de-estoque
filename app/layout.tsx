@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Estoque 3 Irmãos — Gestão de estoque",
-  description: "Controle inteligente de estoque, produtos e movimentações.",
+  title: "Estoque Aqui — Gestão de estoque para sua empresa",
+  description: "Organize produtos, movimentações e inventários em uma plataforma de gestão de estoque.",
 };
 
 export default function RootLayout({
