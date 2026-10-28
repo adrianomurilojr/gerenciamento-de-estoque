@@ -4,6 +4,10 @@ Protótipo responsivo de gestão de estoque para empresas de qualquer segmento. 
 
 A área operacional inclui dashboard, catálogo de produtos com marca, categoria, unidade de medida e observações, entradas e saídas, inventário, produtos com defeito, relatórios, fornecedores, configurações da empresa (nome, CNPJ, endereço, logo e foto de perfil) e temas claro/escuro. A navegação lateral tem rolagem própria para acomodar todos os itens em telas menores. A interface se adapta a celulares, tablets e desktops.
 
+## Deploy 
+
+https://gerenciamento-de-estoque-olive.vercel.app/
+
 ## Tecnologias
 
 Next.js, React, TypeScript, Tailwind CSS, Recharts e Lucide.
